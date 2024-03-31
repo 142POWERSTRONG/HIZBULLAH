@@ -16,12 +16,12 @@ body {
 
 .main {
    
-      width: 70%;
+      width: 100%;
     background: linear-gradient(to top, rgb(0,0,0,0.5)50%,rgb(0,0,0,0.5)50%,rgb(0,0,0,0.5)50%);
     background-image: url(back.png);
     background-position: center;
     background-size: cover;
-    height: 129vh;
+    height: 110vh;
     background-repeat: repeat;
     padding-top: 130px;
 }
