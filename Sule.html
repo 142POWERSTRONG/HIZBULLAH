@@ -66,32 +66,46 @@
     </script>
 
     <script>
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbxajYaQF0HXslR9fNYUNKpm4Gxp0I8dOUshBbXtfeG4-D-FXNlHFTlWWFR0sg4XDgYEGQ/exec';
-        const form = document.forms['submit-to-google-sheet'];
+        const sheetName = 'Sheet1'
+const scriptProp = PropertiesService.getScriptProperties()
 
-        form.addEventListener('submit', e => {
-            e.preventDefault();
-            const submitBtn = document.querySelector(".save-btn");
-            submitBtn.innerHTML = "<div class='loader'></div>"; // Display loader animation
+function initialSetup () {
+  const activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet()
+  scriptProp.setProperty('key', activeSpreadsheet.getId())
+}
 
-            fetch(scriptURL, { method: 'POST', body: new FormData(form)})
-                .then(response => {
-                    if (response.ok) {
-                        const userName = form.elements['name'].value;
-                        alert("Hi " + userName + "!, your Name has been submitted successfully! Please do not repeat it again. Have a nice day!~~~~~~✅✅✅✅✅✅~~~~~~");
-                        setTimeout(function() {
-                            submitBtn.innerHTML = "<b>Submit</b>"; // Reset button text
-                        }, 5000);
-                        form.reset();
-                    } else {
-                        throw new Error('Submission failed');
-                    }
-                })
-                .catch(error => {
-                    alert('An Error occurred: Failed to submit or ' + error.message + '. Please check your internet connection and try again. THANK YOU');
-                    submitBtn.innerHTML = "<b>Submit</b>"; // Reset button text
-                });
-        });
+function doPost (e) {
+  const lock = LockService.getScriptLock()
+  lock.tryLock(10000)
+
+  try {
+    const doc = SpreadsheetApp.openById(scriptProp.getProperty('https://docs.google.com/spreadsheets/d/1r8Xy1K9BpNY-kn3TtDzEif_3nA96N5WUW4ZOCIGhckM/edit?usp=drivesdk'))
+    const sheet = doc.getSheetByName(sheetName)
+
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
+    const nextRow = sheet.getLastRow(1) + 1
+
+    const newRow = headers.map(function(header) {
+      return header === 'Date' ? new Date() : e.parameter[header]
+    })
+
+    sheet.getRange(nextRow, 1, 1, newRow.length).setValues([newRow])
+
+    return ContentService
+      .createTextOutput(JSON.stringify({ 'result': 'success', 'row': nextRow }))
+      .setMimeType(ContentService.MimeType.JSON)
+  }
+
+  catch (e) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ 'result': 'error', 'error': e }))
+      .setMimeType(ContentService.MimeType.JSON)
+  }
+
+  finally {
+    lock.releaseLock()
+  }
+        }
     </script>
     
 </body>
